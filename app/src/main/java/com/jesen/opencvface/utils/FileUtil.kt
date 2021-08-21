@@ -18,7 +18,7 @@ object FileUtil {
         }
         try {
             val fos = FileOutputStream(file)
-            val `is` = context.assets.open(file.absolutePath!!)
+            val `is` = context.assets.open(file.absolutePath)
             var len: Int
             val b = ByteArray(2048)
             while (`is`.read(b).also { len = it } != -1) {

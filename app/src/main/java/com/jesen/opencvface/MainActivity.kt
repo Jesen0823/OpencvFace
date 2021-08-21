@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback, Camera.Preview
     override fun surfaceDestroyed(holder: SurfaceHolder) {
     }
 
-    override fun onPreviewFrame(data: ByteArray?, camera: Camera?) {
+    override fun onPreviewFrame(data: ByteArray, camera: Camera?) {
         mOpencvHelp.postData(data, CameraHelper.WIDTH, CameraHelper.HEIGHT, cameraId)
     }
 }
