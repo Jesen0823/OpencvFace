@@ -1,5 +1,7 @@
 package com.jesen.opencvface
 
+import android.view.Surface
+
 class OpencvHelp {
 
     companion object {
@@ -9,4 +11,6 @@ class OpencvHelp {
     }
 
     external fun init(path:String);
+    external fun setSurface(surface: Surface)
+    external fun postData(data: ByteArray, width: Int, height: Int, cameraId: Int)
 }

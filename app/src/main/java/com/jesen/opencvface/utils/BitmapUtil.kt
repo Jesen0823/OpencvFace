@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.util.Log
+import com.jesen.opencvface.utils.FileUtil
 import java.io.ByteArrayOutputStream
 
 import okio.buffer
