@@ -22,5 +22,6 @@ find_library(
 
 target_link_libraries( 
         opencvface
+        andrid
         opencv_java4
         ${log-lib})
