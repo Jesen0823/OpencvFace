@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() , HelperCallback {
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG,"---onCreate")
+
         setContentView(R.layout.activity_main)
         thumbnailView = findViewById(R.id.thumbnail_view)
         preView = findViewById(R.id.preview)
@@ -50,21 +52,28 @@ class MainActivity : AppCompatActivity() , HelperCallback {
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onResume() {
+        Log.d(TAG,"---onResume")
         super.onResume()
         camera2Helper?.startCamera()
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        Log.d(TAG,"---onRestart")
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onPause() {
         super.onPause()
+        Log.d(TAG,"---onPause")
         camera2Helper?.onPause()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onStop() {
         super.onStop()
+        Log.d(TAG,"---onStop")
         camera2Helper?.endPreView()
-        camera2Helper?.endCamera()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -128,7 +137,5 @@ class MainActivity : AppCompatActivity() , HelperCallback {
             camera2Helper?.captureImageBurst(5)
             return true
         }
-
     }
-
 }

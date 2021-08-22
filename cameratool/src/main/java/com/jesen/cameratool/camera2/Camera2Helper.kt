@@ -54,10 +54,10 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         private const val MSG_START_CAPTURE_IMAGE_CONTINUOUSLY: Int = 0x0B // 不间断获取预览
         private const val MSG_CREATE_REQUEST_BUILDERS: Int = 0x0C // 创建CaptureRequest
 
-        private const val MAX_PREVIEW_WIDTH: Int = 1920
-        private const val MAX_PREVIEW_HEIGHT: Int = 1080
-        private const val MAX_IMAGE_WIDTH: Int = 1920
-        private const val MAX_IMAGE_HEIGHT: Int = 1080
+        private const val MAX_PREVIEW_WIDTH: Int = 3968
+        private const val MAX_PREVIEW_HEIGHT: Int = 2976
+        private const val MAX_IMAGE_WIDTH: Int = 2048
+        private const val MAX_IMAGE_HEIGHT: Int = 1536
 
         private const val REQUEST_PERMISSION_CODE: Int = 1
         private val REQUIRED_PERMISSIONS: Array<String> = arrayOf(
