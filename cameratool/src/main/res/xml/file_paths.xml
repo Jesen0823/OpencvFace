@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+
+    <external-files-path
+        name="camera_has_sdcard"
+        path="." />
+    <external-path
+        name="camera"
+        path="/DCIM/" />
+    <external-files-path
+        name="dcim_external_files"
+        path="/DCIM/" />
+
+</paths>

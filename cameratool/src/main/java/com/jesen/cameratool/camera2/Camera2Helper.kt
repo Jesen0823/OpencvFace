@@ -27,9 +27,11 @@ import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.content.ContextCompat
 import com.jesen.cameratool.GlobaApp
 import com.jesen.cameratool.isHardwareLevelSupported
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.BlockingQueue
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingDeque
 
 @RequiresApi(Build.VERSION_CODES.M)
@@ -67,9 +69,9 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
     }
 
     private val mainHandler: Handler = Handler(Looper.getMainLooper())
+
     // 播放音效
     private val mediaActionSound: MediaActionSound = MediaActionSound()
-    private val saveImageExecutor: Executor = Executors.newSingleThreadExecutor()
     private val deviceOrientationListener: DeviceOrientationListener by lazy {
         DeviceOrientationListener(context)
     }
@@ -106,7 +108,7 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         Log.d(TAG, "message:$msg")
         when (msg.what) {
             MSG_OPEN_CAMERA -> {
-                Log.d(TAG,"msg [open camera]")
+                Log.d(TAG, "msg [open camera]")
                 cameraCharacteristicsFuture = SettableFuture()
                 cameraDeviceFuture = SettableFuture()
                 val cameraId = msg.obj as String
@@ -114,7 +116,7 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                 cameraManager.openCamera(cameraId, cameraStateCallback, mainHandler)
             }
             MSG_CLOSE_CAMERA -> {
-                Log.d(TAG,"msg [close camera]")
+                Log.d(TAG, "msg [close camera]")
                 val cameraDevice = cameraDeviceFuture?.get()
                 cameraDevice?.close()
                 cameraDeviceFuture = null
@@ -169,9 +171,11 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                         cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]
                     if (streamConfigurationMap?.isOutputSupportedFor(imageFormat) == true) {
                         previewDataImageReader = ImageReader.newInstance(
-                            previewSize.width, previewSize.height, imageFormat, 3)
+                            previewSize.width, previewSize.height, imageFormat, 3
+                        )
                         previewDataImageReader?.setOnImageAvailableListener(
-                            OnPreviewDataAvailableListener(), cameraHandler)
+                            OnPreviewDataAvailableListener(), cameraHandler
+                        )
                         previewDataSurface = previewDataImageReader?.surface
                     }
                 }
@@ -198,7 +202,11 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                         captureImageRequestBuilder.addTarget(previewDataSurface)
                     }
                     val previewRequest = previewImageRequestBuilder.build()
-                    captureSession.setRepeatingRequest(previewRequest, RepeatingCaptureStateCallback(), mainHandler)
+                    captureSession.setRepeatingRequest(
+                        previewRequest,
+                        RepeatingCaptureStateCallback(),
+                        mainHandler
+                    )
                 }
             }
             MSG_STOP_PREVIEW -> {
@@ -213,11 +221,18 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                     // Create a JPEG ImageReader instance according to the image size.
                     val maxWidth = msg.arg1
                     val maxHeight = msg.arg2
-                    val imageSize = selectOptimalSize(cameraCharacteristics, ImageReader::class.java,
-                        maxWidth, maxHeight)!!
-                    mImageReader = ImageReader.newInstance(imageSize.width, imageSize.height,
-                        ImageFormat.JPEG, 5)
-                    mImageReader?.setOnImageAvailableListener(OnJpjAvailableListener(), cameraHandler)
+                    val imageSize = selectOptimalSize(
+                        cameraCharacteristics, ImageReader::class.java,
+                        maxWidth, maxHeight
+                    )!!
+                    mImageReader = ImageReader.newInstance(
+                        imageSize.width, imageSize.height,
+                        ImageFormat.JPEG, 5
+                    )
+                    mImageReader?.setOnImageAvailableListener(
+                        OnJpjAvailableListener(),
+                        cameraHandler
+                    )
                     mImageSurface = mImageReader?.surface
                     // Configure the thumbnail size if any suitable size found, no thumbnail will be generated if the thumbnail size is null.
                     val availableThumbnailSizes =
@@ -261,7 +276,11 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                     captureImageRequestBuilder.addTarget(jpegSurface)
 
                     val captureImageRequest = captureImageRequestBuilder.build()
-                    captureSession.capture(captureImageRequest, CaptureImageStateCallback(), mainHandler)
+                    captureSession.capture(
+                        captureImageRequest,
+                        CaptureImageStateCallback(),
+                        mainHandler
+                    )
                 }
             }
             MSG_CAPTURE_IMAGE_BURST -> {
@@ -294,7 +313,11 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                     for (i in 1..burstNumber) {
                         captureImageRequests.add(captureImageRequest)
                     }
-                    captureSession.captureBurst(captureImageRequests, CaptureImageStateCallback(), mainHandler)
+                    captureSession.captureBurst(
+                        captureImageRequests,
+                        CaptureImageStateCallback(),
+                        mainHandler
+                    )
                 }
             }
             MSG_START_CAPTURE_IMAGE_CONTINUOUSLY -> {
@@ -322,7 +345,11 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
 
                     // Use the repeating mode to capture image continuously.
                     val captureImageRequest = captureImageRequestBuilder.build()
-                    captureSession.setRepeatingRequest(captureImageRequest, CaptureImageStateCallback(), mainHandler)
+                    captureSession.setRepeatingRequest(
+                        captureImageRequest,
+                        CaptureImageStateCallback(),
+                        mainHandler
+                    )
                 }
             }
         }
@@ -410,20 +437,20 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         previewDataImageReader?.close()
     }
 
-     fun onPause() {
+    fun onPause() {
         deviceOrientationListener.disable()
         closeCamera()
         previewDataImageReader?.close()
         mImageReader?.close()
     }
 
-     fun onDestroy() {
+    fun onDestroy() {
         stopCameraThread()
         mediaActionSound.release()
     }
 
     @MainThread
-     fun switchCamera() {
+    fun switchCamera() {
         val cameraDevice = cameraDeviceFuture?.get()
         val oldCameraId = cameraDevice?.id
         val newCameraId = if (oldCameraId == frontCameraId) backCameraId else frontCameraId
@@ -497,35 +524,39 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
 
     // 拍照
     @MainThread
-     fun captureImage() {
+    fun captureImage() {
         cameraHandler?.sendEmptyMessage(MSG_CAPTURE_IMAGE)
     }
 
     // 照片连拍
     @MainThread
-     fun captureImageBurst(burstNumber: Int) {
+    fun captureImageBurst(burstNumber: Int) {
         cameraHandler?.obtainMessage(MSG_CAPTURE_IMAGE_BURST, burstNumber, 0)?.sendToTarget()
     }
 
     // 录像开始
     @MainThread
-     fun startCaptureImageContinuously() {
+    fun startCaptureImageContinuously() {
         cameraHandler?.sendEmptyMessage(MSG_START_CAPTURE_IMAGE_CONTINUOUSLY)
     }
 
     // 录像停止
     @MainThread
-     fun stopCaptureImageContinuously() {
+    fun stopCaptureImageContinuously() {
         // Restart preview to stop the continuous image capture.
         openPreview()
     }
+
     /**
      * 在相机支持的尺寸范围内选取所需尺寸
      * */
     @WorkerThread
-    private fun selectOptimalSize(cameraCharacteristics: CameraCharacteristics, clazz: Class<*>,
-        maxWidth: Int, maxHeight: Int): Size? {
-        val streamConfigurationMap = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+    private fun selectOptimalSize(
+        cameraCharacteristics: CameraCharacteristics, clazz: Class<*>,
+        maxWidth: Int, maxHeight: Int
+    ): Size? {
+        val streamConfigurationMap =
+            cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
         val supportedSizes = streamConfigurationMap?.getOutputSizes(clazz)
         return getOptimalSize(supportedSizes, maxWidth, maxHeight)
     }
@@ -568,7 +599,8 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         if (myDeviceOrientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
             return 0
         }
-        val sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+        val sensorOrientation =
+            cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
 
         // Round device orientation to a multiple of 90
         myDeviceOrientation = (myDeviceOrientation + 45) / 90 * 90
@@ -589,7 +621,8 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
     private fun getCameraLocation(): Location? {
         val locationManager = mActivity.getSystemService(LocationManager::class.java)
         if (locationManager != null && ContextCompat.checkSelfPermission(
-                mActivity, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                mActivity, android.Manifest.permission.ACCESS_FINE_LOCATION
+            )
             == PackageManager.PERMISSION_GRANTED
         ) {
             return locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
@@ -608,26 +641,26 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
     private inner class CameraStateCallback : CameraDevice.StateCallback() {
         @MainThread
         override fun onOpened(camera: CameraDevice) {
-            Log.d(TAG,"CameraStateCallback, onOpened")
+            Log.d(TAG, "CameraStateCallback, onOpened")
             cameraDeviceFuture?.set(camera)
             cameraCharacteristicsFuture?.set(getCameraCharacteristics(camera.id))
         }
 
         @MainThread
         override fun onClosed(camera: CameraDevice) {
-            Log.d(TAG,"CameraStateCallback, onClosed")
+            Log.d(TAG, "CameraStateCallback, onClosed")
         }
 
         @MainThread
         override fun onDisconnected(camera: CameraDevice) {
-            Log.d(TAG,"CameraStateCallback, onDisconnected")
+            Log.d(TAG, "CameraStateCallback, onDisconnected")
             cameraDeviceFuture?.set(camera)
             closeCamera()
         }
 
         @MainThread
         override fun onError(camera: CameraDevice, error: Int) {
-            Log.d(TAG,"CameraStateCallback, onError")
+            Log.d(TAG, "CameraStateCallback, onError")
             cameraDeviceFuture?.set(camera)
             closeCamera()
         }
@@ -636,25 +669,29 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
     private inner class SessionStateCallback : CameraCaptureSession.StateCallback() {
         @MainThread
         override fun onConfigured(session: CameraCaptureSession) {
-            Log.d(TAG,"SessionStateCallback, onConfigured")
+            Log.d(TAG, "SessionStateCallback, onConfigured")
             captureSessionFuture?.set(session)
         }
+
         @MainThread
         override fun onConfigureFailed(session: CameraCaptureSession) {
-            Log.d(TAG,"SessionStateCallback, onConfigureFailed")
+            Log.d(TAG, "SessionStateCallback, onConfigureFailed")
             captureSessionFuture?.set(session)
         }
+
         @MainThread
         override fun onClosed(session: CameraCaptureSession) {
             super.onClosed(session)
-            Log.d(TAG,"SessionStateCallback, onClosed")
+            Log.d(TAG, "SessionStateCallback, onClosed")
         }
     }
 
     private inner class PreviewSurfaceTextureListener : TextureView.SurfaceTextureListener {
         @MainThread
-        override fun onSurfaceTextureSizeChanged(surfaceTexture: SurfaceTexture,
-            width: Int, height: Int) = Unit
+        override fun onSurfaceTextureSizeChanged(
+            surfaceTexture: SurfaceTexture,
+            width: Int, height: Int
+        ) = Unit
 
         @MainThread
         override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
@@ -663,25 +700,33 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean = false
 
         @MainThread
-        override fun onSurfaceTextureAvailable(surfaceTexture: SurfaceTexture, width: Int, height: Int) {
-            Log.d(TAG,"PreviewSurfaceTextureListener, onSurfaceTextureAvailable")
+        override fun onSurfaceTextureAvailable(
+            surfaceTexture: SurfaceTexture,
+            width: Int,
+            height: Int
+        ) {
+            Log.d(TAG, "PreviewSurfaceTextureListener, onSurfaceTextureAvailable")
             previewSurfaceTextureFuture?.set(surfaceTexture)
         }
     }
 
     private inner class RepeatingCaptureStateCallback : CameraCaptureSession.CaptureCallback() {
         @MainThread
-        override fun onCaptureStarted(session: CameraCaptureSession, request: CaptureRequest,
-            timestamp: Long, frameNumber: Long) {
+        override fun onCaptureStarted(
+            session: CameraCaptureSession, request: CaptureRequest,
+            timestamp: Long, frameNumber: Long
+        ) {
             super.onCaptureStarted(session, request, timestamp, frameNumber)
-            Log.d(TAG,"RepeatingCaptureStateCallback, onCaptureStarted")
+            Log.d(TAG, "RepeatingCaptureStateCallback, onCaptureStarted")
         }
 
         @MainThread
-        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest,
-            result: TotalCaptureResult) {
+        override fun onCaptureCompleted(
+            session: CameraCaptureSession, request: CaptureRequest,
+            result: TotalCaptureResult
+        ) {
             super.onCaptureCompleted(session, request, result)
-            Log.d(TAG,"RepeatingCaptureStateCallback, onCaptureCompleted")
+            Log.d(TAG, "RepeatingCaptureStateCallback, onCaptureCompleted")
         }
     }
 
@@ -691,7 +736,7 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
          * Called every time the preview frame data is available.
          */
         override fun onImageAvailable(imageReader: ImageReader) {
-            Log.d(TAG,"OnPreviewDataAvailableListener, onImageAvailable")
+            Log.d(TAG, "OnPreviewDataAvailableListener, onImageAvailable")
             val image = imageReader.acquireNextImage()
             image?.use {
                 val planes = image.planes
@@ -712,16 +757,20 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
      * */
     private inner class CaptureImageStateCallback : CameraCaptureSession.CaptureCallback() {
         @MainThread
-        override fun onCaptureCompleted(session: CameraCaptureSession,
-            request: CaptureRequest, result: TotalCaptureResult) {
+        override fun onCaptureCompleted(
+            session: CameraCaptureSession,
+            request: CaptureRequest, result: TotalCaptureResult
+        ) {
             super.onCaptureCompleted(session, request, result)
             captureResults.put(result)
         }
 
-        override fun onCaptureStarted(session: CameraCaptureSession, request: CaptureRequest,
-            timestamp: Long, frameNumber: Long) {
+        override fun onCaptureStarted(
+            session: CameraCaptureSession, request: CaptureRequest,
+            timestamp: Long, frameNumber: Long
+        ) {
             super.onCaptureStarted(session, request, timestamp, frameNumber)
-            cameraHandler?.post{mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)}
+            cameraHandler?.post { mediaActionSound.play(MediaActionSound.SHUTTER_CLICK) }
         }
     }
 
@@ -730,21 +779,25 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
      * */
     private inner class OnJpjAvailableListener : ImageReader.OnImageAvailableListener {
         @RequiresApi(Build.VERSION_CODES.O)
-        @WorkerThread
         override fun onImageAvailable(imageReader: ImageReader) {
             val image = imageReader.acquireNextImage()
             val captureResult = captureResults.take()
             if (image != null && captureResult != null) {
                 image.use {
-                    saveImageExecutor.execute {
-                        val orientation = captureResult[CaptureResult.JPEG_ORIENTATION]
-                        val location = captureResult[CaptureResult.JPEG_GPS_LOCATION]
-                        val thumb = Util.insertImage2MediaStore(context, it, location, orientation)
-                        if (thumb != null) {
-                            mActivity.runOnUiThread {
-                                mHelperCallback?.saveImageResult(thumb)
+                    val orientation = captureResult[CaptureResult.JPEG_ORIENTATION]
+                    val location = captureResult[CaptureResult.JPEG_GPS_LOCATION]
+                    val imageByteBuffer =
+                        image.planes[0].buffer       // Jpeg image data only occupy the planes[0].
+                    val imageByteArray = ByteArray(imageByteBuffer.remaining())
+                    imageByteBuffer.get(imageByteArray)
+                    val imgSize = Size(image.width, image.height)
+
+                    GlobalScope.launch(Dispatchers.Main) {
+                        val thumb = withContext(Dispatchers.IO) {
+                                Util.insertImage2MediaStore(context, imageByteArray, imgSize, location, orientation)
                             }
-                        }
+                        Log.d(TAG, "currentThread:${Thread.currentThread().name}")
+                        mHelperCallback?.saveImageResult(thumb)
                     }
                 }
             }
@@ -774,12 +827,9 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
 
 
 interface HelperCallback {
-    fun saveImageResult(thumb: Bitmap)
-    fun yuvResult(image:Image)
+    fun saveImageResult(thumb: Bitmap?)
+    fun yuvResult(image: Image)
 }
-
-
-
 
 
 

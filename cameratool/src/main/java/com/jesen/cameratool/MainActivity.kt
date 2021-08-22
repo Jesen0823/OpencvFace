@@ -19,6 +19,7 @@ import com.jesen.cameratool.camera2.Camera2Helper
 import com.jesen.cameratool.camera2.HelperCallback
 import com.jesen.cameratool.view.CameraPreviewView
 
+private const val TAG = "MainActivity"
 class MainActivity : AppCompatActivity() , HelperCallback {
 
     private var camera2Helper: Camera2Helper? =null
@@ -72,7 +73,8 @@ class MainActivity : AppCompatActivity() , HelperCallback {
         camera2Helper?.onDestroy()
     }
 
-    override fun saveImageResult(thumb: Bitmap) {
+    override fun saveImageResult(thumb: Bitmap?) {
+        Log.d(TAG,"currentThread:${Thread.currentThread().name}")
         thumbnailView.setImageBitmap(thumb)
         thumbnailView.scaleX = 0.8F
         thumbnailView.scaleY = 0.8F
