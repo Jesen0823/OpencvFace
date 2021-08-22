@@ -12,22 +12,44 @@
         android:layout_height="match_parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/startBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="打开相机"
+    <ImageView
+        android:id="@+id/thumbnail_view"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_margin="8dp"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_thumb_image_24"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.304"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/preview" />
-    <Button
-        android:id="@+id/preViewBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="打开预览"
+        app:layout_constraintRight_toLeftOf="@+id/capture_image_btn"
+        app:layout_constraintTop_toBottomOf="@+id/preview"
+        app:layout_constraintVertical_bias="0.925" />
+
+    <ImageButton
+        android:id="@+id/capture_image_btn"
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        android:contentDescription="Capture image"
+        android:src="@drawable/ic_baseline_photo_camera_24"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/startBtn"
-        app:layout_constraintTop_toBottomOf="@id/preview" />
+        app:layout_constraintHorizontal_bias="0.372"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/preview"
+        app:layout_constraintVertical_bias="0.944" />
+
+    <ImageButton
+        android:id="@+id/switch_camera"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginBottom="30dp"
+        android:src="@drawable/ic_change_camera"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/capture_image_btn" />
+    tools:srcCompat="@tools:sample/avatars" />
 </androidx.constraintlayout.widget.ConstraintLayout>
