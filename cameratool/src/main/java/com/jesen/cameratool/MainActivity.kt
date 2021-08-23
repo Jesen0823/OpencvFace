@@ -7,17 +7,15 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.GestureDetector
-import android.view.MotionEvent
-import android.view.View
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.Toast
+import android.view.*
 import androidx.annotation.RequiresApi
 import com.jesen.cameratool.camera2.Camera2Helper
+import com.jesen.cameratool.camera2.FlushType
 import com.jesen.cameratool.camera2.HelperCallback
 import com.jesen.cameratool.view.CameraPreviewView
+import android.os.CountDownTimer
+import android.widget.*
+
 
 private const val TAG = "MainActivity"
 class MainActivity : AppCompatActivity() , HelperCallback {
@@ -26,7 +24,10 @@ class MainActivity : AppCompatActivity() , HelperCallback {
     private lateinit var thumbnailView:ImageView
     private lateinit var startCamera:ImageButton
     private lateinit var switchCamera:ImageButton
+    private lateinit var timeTv:TextView
     private lateinit var preView:CameraPreviewView
+
+    private var mDelayTime = 0
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() , HelperCallback {
         preView = findViewById(R.id.preview)
         startCamera = findViewById(R.id.capture_image_btn)
         switchCamera = findViewById(R.id.switch_camera)
+        timeTv = findViewById(R.id.timeTv)
 
         camera2Helper = Camera2Helper(this,preView)
         // 初始化camera2Helper
@@ -47,6 +49,43 @@ class MainActivity : AppCompatActivity() , HelperCallback {
 
         switchCamera.setOnClickListener {
             camera2Helper?.switchCamera()
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val  inflater = menuInflater
+        inflater.inflate(R.menu.setting_menu,menu)
+        return true
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId){
+            R.id.focus -> {
+                camera2Helper?.openFocus()
+                return true
+            }
+            R.id.flush_auto -> {
+                Log.d(TAG,"flush mode set [auto]")
+                camera2Helper?.setFlush(FlushType.AUTO)
+                return true
+            }
+            R.id.flush_open ->{
+                Log.d(TAG,"flush mode set [open]")
+                camera2Helper?.setFlush(FlushType.OPEN)
+                return true
+            }
+            R.id.flush_close ->{
+                Log.d(TAG,"flush mode set [close]")
+                camera2Helper?.setFlush(FlushType.CLOSE)
+                return true
+            }
+            R.id.delay_cap ->{
+                Log.d(TAG,"capture mode set [delay]")
+                mDelayTime = 5000
+                return true
+            }
+            else -> return super.onOptionsItemSelected(item)
         }
     }
 
@@ -112,8 +151,22 @@ class MainActivity : AppCompatActivity() , HelperCallback {
 
         @RequiresApi(Build.VERSION_CODES.M)
         override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
-            Toast.makeText(this@MainActivity,"单击拍照",Toast.LENGTH_SHORT).show()
-            camera2Helper?.captureImage()
+            // 是否延时拍照
+            if (mDelayTime == 0) {
+                Toast.makeText(this@MainActivity,"单击拍照",Toast.LENGTH_SHORT).show()
+                camera2Helper?.captureImage()
+            } else {
+                object : CountDownTimer(mDelayTime.toLong(), 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        timeTv.visibility = View.VISIBLE
+                        timeTv.text = "" + millisUntilFinished / 1000
+                    }
+
+                    override fun onFinish() {
+                        timeTv.visibility = View.GONE
+                        camera2Helper?.captureImage()                    }
+                }.start()
+            }
             return true
         }
 

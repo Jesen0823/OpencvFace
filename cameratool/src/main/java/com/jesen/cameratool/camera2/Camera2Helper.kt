@@ -70,6 +70,11 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
 
     private val mainHandler: Handler = Handler(Looper.getMainLooper())
 
+    // 是否支持闪光灯
+    private var mSupportFlush:Boolean? = null
+    // 闪光灯默认关闭
+    private var mFlushMode = FlushType.CLOSE
+
     // 播放音效
     private val mediaActionSound: MediaActionSound = MediaActionSound()
     private val deviceOrientationListener: DeviceOrientationListener by lazy {
@@ -249,6 +254,8 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
                         cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
                     captureImageRequestBuilder =
                         cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+                    /*recordVideoRequestBuilder =
+                        cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)*/
                 }
             }
             MSG_CAPTURE_IMAGE -> {
@@ -274,7 +281,10 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
 
                     // Add the target surface to receive the jpeg image data.
                     captureImageRequestBuilder.addTarget(jpegSurface)
-
+                    // 自动对焦
+                    captureImageRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                    // 自动曝光
+                    captureImageRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
                     val captureImageRequest = captureImageRequestBuilder.build()
                     captureSession.capture(
                         captureImageRequest,
@@ -363,7 +373,7 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         cameraIdList.forEach { cameraId ->
             Log.d(TAG, "foreach , cameraId: $cameraId")
             val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
-
+            mSupportFlush = cameraCharacteristics[CameraCharacteristics.FLASH_INFO_AVAILABLE]
             if (cameraCharacteristics.isHardwareLevelSupported(REQUIRED_SUPPORTED_HARDWARE_LEVEL)) {
                 Log.d(TAG, "if , support: $REQUIRED_SUPPORTED_HARDWARE_LEVEL")
                 if (cameraCharacteristics[CameraCharacteristics.LENS_FACING] == CameraCharacteristics.LENS_FACING_FRONT) {
@@ -522,6 +532,17 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
         cameraHandler?.sendEmptyMessage(MSG_STOP_PREVIEW)
     }
 
+   /* private fun setFlushMode(){
+        when(mFlushMode){
+            FlushType.AUTO -> previewImageRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+            FlushType.OPEN -> previewImageRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+            FlushType.CLOSE ->{
+                previewImageRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                previewImageRequestBuilder?.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+            }
+        }
+    }*/
+
     // 拍照
     @MainThread
     fun captureImage() {
@@ -669,7 +690,8 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
     private inner class SessionStateCallback : CameraCaptureSession.StateCallback() {
         @MainThread
         override fun onConfigured(session: CameraCaptureSession) {
-            Log.d(TAG, "SessionStateCallback, onConfigured")
+            Log.d(TAG, "SessionStateCallback, onConfigured,mSupportFlush:$mSupportFlush")
+            if (cameraDeviceFuture?.get() == null) return
             captureSessionFuture?.set(session)
         }
 
@@ -823,15 +845,37 @@ class Camera2Helper(activity: Activity, cameraPreview: TextureView) : Handler.Ca
     fun setHelperCallback(callback: HelperCallback) {
         this.mHelperCallback = callback
     }
-}
 
+    /**
+     * 提供给外部 设置闪光灯
+     * */
+    fun setFlush(type: FlushType) {
+        Log.d(TAG,"set Flush:${type.name}")
+        val rePreview = mFlushMode != type
+         mFlushMode = type
+        when(type){
+            FlushType.AUTO -> previewImageRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+            FlushType.OPEN -> previewImageRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+            FlushType.CLOSE ->previewImageRequestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.FLASH_MODE_OFF)
+        }
+    }
+
+    fun openFocus() {
+        TODO("Not yet implemented")
+    }
+}
 
 interface HelperCallback {
     fun saveImageResult(thumb: Bitmap?)
     fun yuvResult(image: Image)
 }
 
-
+enum class FlushType{
+    AUTO,OPEN,CLOSE
+}
 
 
 

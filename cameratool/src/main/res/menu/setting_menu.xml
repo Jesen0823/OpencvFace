@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/setting_camera"
+        android:title="参数选项"
+        app:showAsAction="ifRoom"/>
+    <group android:id="@+id/setting">
+        <item android:id="@+id/focus"
+            android:title="自动聚焦"
+            app:showAsAction="ifRoom"/>
+        <item android:id="@+id/flush_auto"
+            android:title="自动闪光灯"
+            app:showAsAction="ifRoom" />
+        <item android:id="@+id/flush_open"
+            android:title="打开闪光灯"
+            app:showAsAction="ifRoom"/>
+        <item android:id="@+id/flush_close"
+            android:title="关闭闪光灯"
+            app:showAsAction="ifRoom"/>
+        <item android:id="@+id/delay_cap"
+            android:title="延时拍照"
+            app:showAsAction="ifRoom"/>
+    </group>
+
+</menu>
